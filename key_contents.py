@@ -1,2 +1,2 @@
 # key_contents.py
-query_keywords = ['islam ]
+query_keywords = ['islam' ]
