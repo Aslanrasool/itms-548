@@ -1,14 +1,14 @@
 import requests
 import re
-import tkinter as tk
-from tkinter import messagebox
 from key_contents import query_keywords
 
 def is_islamophobic(text):
     for keyword in query_keywords:
         if re.search(keyword, text, re.IGNORECASE):
+            print(f"Keyword match: {keyword}")  # Debug information
             return True
     return False
+
 
 def fetch_posts(board):
     url = f'https://a.4cdn.org/{board}/catalog.json'
@@ -25,47 +25,28 @@ def fetch_posts(board):
     return posts
 
 def clean_text(text):
-    # Clean the text as in the original script
-    # ...
+    text = re.sub('<.*?>', '', text)  # Remove HTML tags
+    text = text.replace('&gt;', '>')  # Replace &gt; with >
+    text = text.replace('&lt;', '<')  # Replace &lt; with <
+    text = text.replace('&amp;', '&')  # Replace &amp; with &
+    text = text.replace('<br>', '\n')  # Replace <br> with a newline character
+    
+    # Remove non-printable characters that are not supported by cp1252 encoding
+    text = ''.join(c for c in text if c == '\n' or 32 <= ord(c) <= 126 or c in 'áéíóúÁÉÍÓÚñÑ')
+    
+    return text
 
-def display_posts(board):
-    islamophobic_posts = fetch_posts(board)
+# Ask the user to input the board
+board = 'pol'
 
-    result_text = ""
-    for post in islamophobic_posts:
-        # Get the name of the user who posted the content
-        name = post.get('name', 'Anonymous')
-        
-        # Clean the post content
-        post_content = clean_text(post['com'])
+islamophobic_posts = fetch_posts(board)
 
-        # Add the cleaned post content to the result text
-        result_text += f"{name}: {post_content}\n\n"
+for post in islamophobic_posts:
+    # Get the name of the user who posted the content
+    name = post.get('name', 'Anonymous')
+    
+    # Clean the post content
+    post_content = clean_text(post['com'])
 
-    if result_text:
-        result_text = f"Islamophobic posts found in /{board}:\n\n{result_text}"
-    else:
-        result_text = f"No islamophobic posts found in /{board}."
-
-    messagebox.showinfo("Search Results", result_text)
-
-def on_submit():
-    board = entry_board.get()
-    display_posts(board)
-
-root = tk.Tk()
-root.title("4chan Islamophobic Post Finder")
-
-frame = tk.Frame(root, padx=10, pady=10)
-frame.pack()
-
-label_board = tk.Label(frame, text="Enter the 4chan board to monitor (e.g., pol):")
-label_board.grid(row=0, column=0, sticky="e")
-
-entry_board = tk.Entry(frame)
-entry_board.grid(row=0, column=1)
-
-submit_button = tk.Button(frame, text="Submit", command=on_submit)
-submit_button.grid(row=1, column=0, columnspan=2)
-
-root.mainloop()
+    # Print the user's name along with the cleaned post content
+    print(f"{name}: {post_content}")
