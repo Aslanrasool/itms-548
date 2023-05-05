@@ -5,6 +5,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from key_contents import query_keywords
 import praw
+import csv
+
 
 
 def is_islamophobic(text):
@@ -43,6 +45,8 @@ def display_posts(board):
     islamophobic_posts = fetch_posts(board)
 
     result_text = ""
+    csv_data = [["Name", "Post Content"]]
+
     for post in islamophobic_posts:
         # Get the name of the user who posted the content
         name = post.get('name', 'Anonymous')
@@ -52,13 +56,19 @@ def display_posts(board):
 
         # Add the cleaned post content to the result text
         result_text += f"{name}: {post_content}\n\n"
+        csv_data.append([name, post_content])
 
     if result_text:
         result_text = f"Islamophobic posts found in /{board}:\n\n{result_text}"
+        # Save the data to a CSV file
+        with open(f'islamophobic_posts_{board}.csv', 'w', newline='', encoding='utf-8') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerows(csv_data)
     else:
         result_text = f"No islamophobic posts found in /{board}."
 
     messagebox.showinfo("Search Results", result_text)
+
 
 def search_posts(subreddit_name, query, limit=10):
     subreddit = reddit.subreddit(subreddit_name)
@@ -83,18 +93,32 @@ def on_reddit_submit():
     search_results = search_posts(subreddit_name, query_keywords, limit)
 
     result_text = ""
+    csv_data = [["Author", "Date Posted", "Title (Short Description)", "Content Link"]]
+
     for post in search_results:
-        result_text += f"Author: {post.author}\n"
-        result_text += f"Date posted: {utc_to_local(post.created_utc)}\n"
-        result_text += f"Title (short description): {post.title}\n"
-        result_text += f"Content link: {post.url}\n\n"
+        author = post.author
+        date_posted = utc_to_local(post.created_utc)
+        title = post.title
+        content_link = post.url
+        
+        result_text += f"Author: {author}\n"
+        result_text += f"Date posted: {date_posted}\n"
+        result_text += f"Title (short description): {title}\n"
+        result_text += f"Content link: {content_link}\n\n"
+        
+        csv_data.append([author, date_posted, title, content_link])
 
     if result_text:
         result_text = f"Reddit search results for /r/{subreddit_name}:\n\n{result_text}"
+        # Save the data to a CSV file
+        with open(f'reddit_islamophobic_posts_{subreddit_name}.csv', 'w', newline='', encoding='utf-8') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerows(csv_data)
     else:
         result_text = f"No islamophobic posts found in /r/{subreddit_name}."
 
     messagebox.showinfo("Reddit Search Results", result_text)
+
 
 def open_about():
     messagebox.showinfo("About", "4chan Islamophobic Post Finder\n\nVersion 1.0.0\n\nCreated by Aslan")
